@@ -16,7 +16,7 @@ MLOps pipeline for real-time Expected Goals (xG) calculation using ZenML, MLflow
 
 ## System Architecture
 
-# ⚽ Soccer Expected Goals (xG) MLOps Platform
+# Soccer Expected Goals (xG) MLOps Platform
 
 [![CI/CD Quality Gate](https://github.com/ajlee0611/soccer-xg-mlops-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/ajlee0611/soccer-xg-mlops-pipeline/actions)
 ![Python 3.11](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
@@ -37,7 +37,7 @@ The platform orchestrates continuous data extraction, feature engineering, and m
 
 ---
 
-## 🚀 Key Highlights
+## Key Highlights
 
 * **Automated MLOps Lifecycle:** End-to-end orchestration with ZenML, transitioning raw event ingestion to artifact logging in MLflow.
 * **Registry Promotion Gates:** Automatic candidate promotion to the `champion` alias only after clearing strict calibration and discrimination thresholds.
@@ -46,7 +46,7 @@ The platform orchestrates continuous data extraction, feature engineering, and m
 
 ---
 
-## 📊 Model Quality & Validation Benchmarks
+## Model Quality & Validation Benchmarks
 
 Evaluating probabilistic models requires balancing discrimination (ranking dangerous opportunities above speculative efforts) with calibration (ensuring predicted probabilities reflect observed conversion rates).
 
@@ -58,7 +58,7 @@ Evaluating probabilistic models requires balancing discrimination (ranking dange
 
 ---
 
-## 📐 Spatial Feature Engineering
+## Spatial Feature Engineering
 
 Shot telemetry coordinates are mapped onto the standard StatsBomb spatial grid: Length $X \in [0.0, 120.0]$, Width $Y \in [0.0, 80.0]$, with the attacking goal line centered at $(120.0, 40.0)$ and goalposts positioned at $(120.0, 36.0)$ and $(120.0, 44.0)$.
 
@@ -72,7 +72,7 @@ $$\theta = \arccos\left( \frac{\vec{v}_1 \cdot \vec{v}_2}{\Vert{}\vec{v}_1\Vert{
 
 ---
 
-## 🛠️ Quickstart & Reproduction
+## Quickstart & Reproduction
 
 ### Prerequisites
 * Python 3.11+
