@@ -10,7 +10,8 @@ MLOps pipeline for real-time Expected Goals (xG) calculation using ZenML, MLflow
 | **Interactive Docs** | Render | [API Swagger UI](https://soccer-xg-mlops-pipeline.onrender.com/docs) | OpenAPI interactive schema & test console |
 | **Health Check** | Render | [`/health`](https://soccer-xg-mlops-pipeline.onrender.com/health) | Uptime & in-memory model validation endpoint |
 
-> **Note on Cold Starts:** The backend runs on a managed cloud instance. If idle, initial requests may take 30–45 seconds while the Docker container boots into RAM and instantiates model weights. Subsequent inference calls execute in <50ms.
+> [!WARNING]
+> **Note on Cold Starts:** The backend runs on a managed cloud instance. If idle, initial requests may take 30–45 seconds while the Docker container boots into RAM and instantiates model weights. Subsequent inference calls execute in `<50ms`.
 
 ---
 
