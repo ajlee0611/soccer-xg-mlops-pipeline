@@ -50,3 +50,50 @@ $$\text{Distance (yards)} = \sqrt{(120.0 - X)^2 + (40.0 - Y)^2}$$
 Calculated by computing the angle $\theta$ between vectors $\vec{v}_1$ (shot origin to left post) and $\vec{v}_2$ (shot origin to right post):
 $$\vec{v}_1 = (120.0 - X, 36.0 - Y), \quad \vec{v}_2 = (120.0 - X, 44.0 - Y)$$
 $$\theta = \arccos\left( \frac{\vec{v}_1 \cdot \vec{v}_2}{\Vert{}\vec{v}_1\Vert{} \Vert{}\vec{v}_2\Vert{}} \right)$$
+
+## 🛠️ Quickstart & Reproduction
+
+### Prerequisites
+* Python 3.11+
+* Node.js 18+ & npm
+* Docker (optional)
+
+### 1. Environment Setup & Pipeline Execution
+
+```bash
+# Clone repository and enter directory
+git clone [https://github.com/ajlee0611/soccer-xg-mlops-pipeline.git](https://github.com/ajlee0611/soccer-xg-mlops-pipeline.git)
+cd soccer-xg-mlops-pipeline
+
+# Create and activate virtual environment
+python3.11 -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# Initialize ZenML and train the production champion model
+zenml init
+python -m src.pipelines.training_pipeline
+```
+
+### 2. Start the Inference Microservice
+
+Run the microservice using either a local Python environment or a Docker container.
+
+## Option A: Local Uvicorn (Development)
+
+Run directly from the repository root with hot reloading enabled:
+
+```bash
+source .venv/bin/activate
+uvicorn serving.app:app --host 0.0.0.0 --port 8000 --reload
+```
+
+## Option B: Docker Container
+```bash
+docker build -t soccer-xg-api:v1 .
+docker run -d -p 8000:8000 --name xg-service soccer-xg-api:v1
+```
+
