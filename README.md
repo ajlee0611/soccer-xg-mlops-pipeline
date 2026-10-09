@@ -14,8 +14,6 @@ MLOps pipeline for real-time Expected Goals (xG) calculation using ZenML, MLflow
 
 ---
 
-## System Architecture
-
 # Soccer Expected Goals (xG) MLOps Platform
 
 [![CI/CD Quality Gate](https://github.com/ajlee0611/soccer-xg-mlops-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/ajlee0611/soccer-xg-mlops-pipeline/actions)
