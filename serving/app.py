@@ -1,9 +1,12 @@
+"""FastAPI service serving the production Champion xG model."""
+
 from contextlib import asynccontextmanager
 from pathlib import Path
 import mlflow.xgboost
 import numpy as np
 from xgboost import XGBClassifier
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 from serving.schemas import ShotRequest, PredictionResponse
 
@@ -12,7 +15,7 @@ model_store = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Loads the model at startup (MLflow registry first, then local artifact)."""
+    """Loads the model at startup (tries MLflow registry first, then local artifact)."""
     loaded = False
 
     # 1. Try MLflow Registry
@@ -47,6 +50,15 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Enable CORS for browser frontend integration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/health")
 def health_check():
@@ -64,13 +76,13 @@ def predict_xg(shot: ShotRequest):
             detail="Model is currently unavailable or uninitialized.",
         )
 
-    # 1. Distance to goal center (120, 40)
+    # 1. Spatial Math: Distance to goal center (120, 40)
     dx = 120.0 - shot.location_x
     dy = 40.0 - shot.location_y
     dist_yards = float(np.sqrt(dx**2 + dy**2))
     dist_meters = float(dist_yards * 0.9144)
 
-    # 2. Subtended post angle: (120, 36) and (120, 44)
+    # 2. Spatial Math: Angle between goal posts (120, 36) and (120, 44)
     v1_x = 120.0 - shot.location_x
     v1_y = 36.0 - shot.location_y
     v2_x = 120.0 - shot.location_x
@@ -84,7 +96,7 @@ def predict_xg(shot: ShotRequest):
     angle_rad = float(np.arccos(cosine))
     angle_deg = float(np.degrees(angle_rad))
 
-    # 3. Format features
+    # 3. Format features for the trained XGBoost model
     features = np.array(
         [
             [
@@ -98,7 +110,7 @@ def predict_xg(shot: ShotRequest):
         ]
     )
 
-    # 4. Predict probability
+    # 4. Predict goal probability
     model = model_store["model"]
     xg_probability = float(model.predict_proba(features)[0][1])
 
