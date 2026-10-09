@@ -1,6 +1,21 @@
 # soccer-xg-mlops-pipeline
 MLOps pipeline for real-time Expected Goals (xG) calculation using ZenML, MLflow, FastAPI, and Docker
 
+## Live Deployments & Endpoints
+
+| Component | Platform | URL | Purpose |
+|---|---|---|---|
+| **Frontend UI** | Vercel | [soccer-xg-mlops-pipeline.vercel.app](https://soccer-xg-mlops-pipeline.vercel.app) | Interactive pitch canvas & real-time inference client |
+| **Serving API** | Render | [soccer-xg-mlops-pipeline.onrender.com](https://soccer-xg-mlops-pipeline.onrender.com) | FastAPI model serving layer (Dockerized) |
+| **Interactive Docs** | Render | [API Swagger UI](https://soccer-xg-mlops-pipeline.onrender.com/docs) | OpenAPI interactive schema & test console |
+| **Health Check** | Render | [`/health`](https://soccer-xg-mlops-pipeline.onrender.com/health) | Uptime & in-memory model validation endpoint |
+
+> **Note on Cold Starts:** The backend runs on a managed cloud instance. If idle, initial requests may take 30–45 seconds while the Docker container boots into RAM and instantiates model weights. Subsequent inference calls execute in <50ms.
+
+---
+
+## System Architecture
+
 # ⚽ Soccer Expected Goals (xG) MLOps Platform
 
 [![CI/CD Quality Gate](https://github.com/ajlee0611/soccer-xg-mlops-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/ajlee0611/soccer-xg-mlops-pipeline/actions)
