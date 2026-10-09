@@ -219,3 +219,16 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 data/
+.zen/
+.mlruns/
+.zen/
+mlruns/
+mlruns.db
+
+# Local SQLite & MLflow databases
+*.db
+mlruns/
+.zen/
+
+# VS Code local machine settings
+.vscode/
