@@ -82,7 +82,7 @@ python -m src.pipelines.training_pipeline
 
 Run the microservice using either a local Python environment or a Docker container.
 
-## Option A: Local Uvicorn (Development)
+### Option A: Local Uvicorn (Development)
 
 Run directly from the repository root with hot reloading enabled:
 
@@ -91,9 +91,25 @@ source .venv/bin/activate
 uvicorn serving.app:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-## Option B: Docker Container
+### Option B: Docker Container
 ```bash
 docker build -t soccer-xg-api:v1 .
 docker run -d -p 8000:8000 --name xg-service soccer-xg-api:v1
 ```
 
+### Verification
+```bash
+curl http://localhost:8000/health
+# Returns: {"status":"healthy","model_loaded":true}
+```
+
+### 3. Launch the Interactive Frontend
+
+In a separate terminal tab:
+```bash
+cd frontend
+npm install --legacy-peer-deps
+npm run dev -- --open
+```
+
+Navigate to http://localhost:5173 to test real-time pitch telemetry inference.
