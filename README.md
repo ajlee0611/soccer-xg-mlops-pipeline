@@ -12,6 +12,10 @@ MLOps pipeline for real-time Expected Goals (xG) calculation using ZenML, MLflow
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38B2AC?logo=tailwindcss&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?logo=docker&logoColor=white)
 
+<p align="center">
+  <img src="docs/demo.gif" alt="Expected Goals Pitch Simulation Demo" width="750" />
+</p>
+
 An end-to-end production Machine Learning pipeline and real-time inference service that calculates **Expected Goals (xG)** from StatsBomb event telemetry.
 
 The platform orchestrates continuous data extraction, feature engineering, and model validation in **ZenML**, tracks and gates deployments using the **MLflow Model Registry**, serves predictions through a containerized **FastAPI** microservice, and provides an interactive **React + Tailwind CSS** telemetry playground for real-time spatial simulation.
