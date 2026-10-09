@@ -51,6 +51,8 @@ Calculated by computing the angle $\theta$ between vectors $\vec{v}_1$ (shot ori
 $$\vec{v}_1 = (120.0 - X, 36.0 - Y), \quad \vec{v}_2 = (120.0 - X, 44.0 - Y)$$
 $$\theta = \arccos\left( \frac{\vec{v}_1 \cdot \vec{v}_2}{\Vert{}\vec{v}_1\Vert{} \Vert{}\vec{v}_2\Vert{}} \right)$$
 
+---
+
 ## 🛠️ Quickstart & Reproduction
 
 ### Prerequisites
