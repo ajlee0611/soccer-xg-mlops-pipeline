@@ -24,7 +24,6 @@ export default function SoccerXgPlayground() {
 
   // Backend Health & Cold-Start State
   const [serviceStatus, setServiceStatus] = useState("checking"); // 'checking' | 'active'
-  const [pollCount, setPollCount] = useState(0);
 
   const pitchRef = useRef(null);
   const abortControllerRef = useRef(null);
@@ -232,12 +231,9 @@ export default function SoccerXgPlayground() {
                 Waking up inference container on Render...
               </p>
               <p className="text-xs text-amber-300/70 mt-0.5">
-                Free-tier instances spin down during inactivity and take ~30–45s to boot. The simulator will unlock automatically once warm.
+                Free-tier instances spin down during inactivity and take ~1 minute to boot. The simulator will unlock automatically once warm.
               </p>
             </div>
-          </div>
-          <div className="text-xs font-mono text-amber-400/80 shrink-0 bg-amber-950/60 px-2.5 py-1 rounded border border-amber-500/20">
-            Ping attempt #{pollCount + 1}
           </div>
         </div>
       )}

@@ -29,7 +29,7 @@ The platform orchestrates continuous data extraction, feature engineering, and m
 | **Health Check** | Render | [`/health`](https://soccer-xg-mlops-pipeline.onrender.com/health) | Uptime & in-memory model validation endpoint |
 
 > [!WARNING]
-> **Note on Cold Starts:** The backend runs on a managed cloud instance. If idle, initial requests may take 30–45 seconds while the Docker container boots into RAM and instantiates model weights. Subsequent inference calls execute in `<50ms`.
+> **Note on Cold Starts:** The backend runs on a managed cloud instance. If idle, initial requests may take ~1min while the Docker container boots into RAM and instantiates model weights. Subsequent inference calls execute in `<50ms`.
 
 ---
 
