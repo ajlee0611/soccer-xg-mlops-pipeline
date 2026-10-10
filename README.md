@@ -28,8 +28,8 @@ The platform orchestrates continuous data extraction, feature engineering, and m
 | **Interactive Docs** | Render | [API Swagger UI](https://soccer-xg-mlops-pipeline.onrender.com/docs) | OpenAPI interactive schema & test console |
 | **Health Check** | Render | [`/health`](https://soccer-xg-mlops-pipeline.onrender.com/health) | Uptime & in-memory model validation endpoint |
 
-> [!WARNING]
-> **Note on Cold Starts:** The backend runs on a managed cloud instance. If idle, initial requests may take ~1min while the Docker container boots into RAM and instantiates model weights. Subsequent inference calls execute in `<50ms`.
+> **Note on Infrastructure & Availability**  
+> The inference service is deployed on a containerized cloud runtime with an automated keep-alive health worker to maintain sub-second response times. During occasional cloud provider container recycling, the initial connection may take a brief moment to complete its handshake.
 
 ---
 
