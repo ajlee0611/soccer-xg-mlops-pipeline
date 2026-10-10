@@ -22,11 +22,17 @@ export default function SoccerXgPlayground() {
   });
   const [loading, setLoading] = useState(false);
 
+  // Backend Health & Cold-Start State
+  const [serviceStatus, setServiceStatus] = useState("checking"); // 'checking' | 'active'
+  const [pollCount, setPollCount] = useState(0);
+
   const pitchRef = useRef(null);
   const abortControllerRef = useRef(null);
   const debounceTimerRef = useRef(null);
 
-  // Send request to FastAPI /predict endpoint with abort signal support
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+  // Send request to FastAPI /predict endpoint with abort controller
   const fetchPrediction = useCallback(
     async (x, y) => {
       if (abortControllerRef.current) {
@@ -37,8 +43,6 @@ export default function SoccerXgPlayground() {
 
       setLoading(true);
       try {
-        const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
-
         const response = await fetch(`${API_BASE_URL}/predict`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -68,10 +72,53 @@ export default function SoccerXgPlayground() {
         setLoading(false);
       }
     },
-    [bodyPart, playPattern, underPressure, firstTime]
+    [API_BASE_URL, bodyPart, playPattern, underPressure, firstTime]
   );
 
-  // Throttle backend calls to ~60ms while dragging so the API isn't spammed
+  // Health probe: polls /health until the backend & model are ready
+  useEffect(() => {
+    let isMounted = true;
+    let timerId = null;
+
+    const checkHealth = async () => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+        const res = await fetch(`${API_BASE_URL}/health`, {
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.status === "healthy" && data.model_loaded) {
+            if (isMounted) {
+              setServiceStatus("active");
+              fetchPrediction(coords.x, coords.y);
+            }
+            return;
+          }
+        }
+      } catch {
+        // Cold start still in progress
+      }
+
+      if (isMounted) {
+        setPollCount((prev) => prev + 1);
+        timerId = setTimeout(checkHealth, 3000);
+      }
+    };
+
+    checkHealth();
+
+    return () => {
+      isMounted = false;
+      if (timerId) clearTimeout(timerId);
+    };
+  }, [API_BASE_URL, fetchPrediction, coords.x, coords.y]);
+
+  // Debounced inference dispatcher during drag
   const queueInference = useCallback(
     (newX, newY) => {
       if (debounceTimerRef.current) {
@@ -84,25 +131,23 @@ export default function SoccerXgPlayground() {
     [fetchPrediction]
   );
 
-  // Map pointer client coordinates directly to StatsBomb pitch boundaries
+  // Convert client pointer position into StatsBomb pitch dimensions
   const updateCoordsFromPointer = useCallback((e) => {
     if (!pitchRef.current) return null;
     const rect = pitchRef.current.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
 
-    // Normalize into 0-1 range clamped to container
     const normX = Math.max(0, Math.min(1, clickX / rect.width));
     const normY = Math.max(0, Math.min(1, clickY / rect.height));
 
-    // Map to attacking half: X: 60 -> 120, Y: 0 -> 80
     const mappedX = ATTACKING_HALF_MIN_X + normX * (PITCH_MAX_X - ATTACKING_HALF_MIN_X);
     const mappedY = normY * PITCH_MAX_Y;
 
     return { x: mappedX, y: mappedY };
   }, []);
 
-  // Continuous pointer handlers
+  // Pointer event handlers for drag interactions
   const handlePointerDown = (e) => {
     e.preventDefault();
     e.target.setPointerCapture(e.pointerId);
@@ -130,19 +175,20 @@ export default function SoccerXgPlayground() {
       try {
         e.target.releasePointerCapture(e.pointerId);
       } catch {
-        // Safe ignore
+        // Safe ignore if pointer capture was lost
       }
-      // Guarantee final shot location sends an un-throttled prediction
       fetchPrediction(coords.x, coords.y);
     }
   };
 
-  // Re-fetch when categorical dropdowns or toggles change
+  // Re-fetch when categorical controls change (only if backend is awake)
   useEffect(() => {
-    fetchPrediction(coords.x, coords.y);
-  }, [bodyPart, playPattern, underPressure, firstTime]);
+    if (serviceStatus === "active") {
+      fetchPrediction(coords.x, coords.y);
+    }
+  }, [bodyPart, playPattern, underPressure, firstTime, serviceStatus, fetchPrediction, coords.x, coords.y]);
 
-  // Clean up timers and in-flight fetch requests on unmount
+  // Teardown timers on unmount
   useEffect(() => {
     return () => {
       if (abortControllerRef.current) abortControllerRef.current.abort();
@@ -150,23 +196,20 @@ export default function SoccerXgPlayground() {
     };
   }, []);
 
-  // SVG Percentage positioning for visual elements
+  // Pitch element mappings
   const ballSvgX = ((coords.x - ATTACKING_HALF_MIN_X) / (PITCH_MAX_X - ATTACKING_HALF_MIN_X)) * 100;
   const ballSvgY = (coords.y / PITCH_MAX_Y) * 100;
 
-  // Post Coordinates in SVG %
   const postLeftY = (36.0 / PITCH_MAX_Y) * 100;
   const postRightY = (44.0 / PITCH_MAX_Y) * 100;
+  const goalCenterY = (40.0 / PITCH_MAX_Y) * 100;
 
-  // Center of the Goal in SVG %
-  const goalCenterY = (40.0 / PITCH_MAX_Y) * 100; // Exactly 50%
-
-  // Color mapping based on probability
- const getXgColor = (val) => {
-  if (val >= 0.35) return "text-emerald-400"; // Prime scoring chance
-  if (val >= 0.15) return "text-amber-400";   // Average/moderate chance
-  return "text-rose-500";                      // Difficult/low-probability chance
-};
+  // Semantic color mapping: High xG is green, low xG is red
+  const getXgColor = (val) => {
+    if (val >= 0.35) return "text-emerald-400";
+    if (val >= 0.15) return "text-amber-400";
+    return "text-rose-500";
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-6 flex flex-col items-center">
@@ -179,6 +222,26 @@ export default function SoccerXgPlayground() {
         </p>
       </header>
 
+      {/* Cold-Start Warning Banner */}
+      {serviceStatus === "checking" && (
+        <div className="max-w-6xl w-full mb-6 bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-center justify-between gap-4 animate-pulse">
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full bg-amber-400 animate-ping" />
+            <div>
+              <p className="text-sm font-semibold text-amber-200">
+                Waking up inference container on Render...
+              </p>
+              <p className="text-xs text-amber-300/70 mt-0.5">
+                Free-tier instances spin down during inactivity and take ~30–45s to boot. The simulator will unlock automatically once warm.
+              </p>
+            </div>
+          </div>
+          <div className="text-xs font-mono text-amber-400/80 shrink-0 bg-amber-950/60 px-2.5 py-1 rounded border border-amber-500/20">
+            Ping attempt #{pollCount + 1}
+          </div>
+        </div>
+      )}
+
       <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Pitch Canvas (Left 2 Columns) */}
         <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-xl flex flex-col">
@@ -189,23 +252,27 @@ export default function SoccerXgPlayground() {
 
           <div
             ref={pitchRef}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-            className="relative w-full aspect-[4/3] bg-emerald-900/60 border-2 border-emerald-500/40 rounded-lg cursor-grab active:cursor-grabbing overflow-hidden select-none touch-none"
+            onPointerDown={serviceStatus === "active" ? handlePointerDown : undefined}
+            onPointerMove={serviceStatus === "active" ? handlePointerMove : undefined}
+            onPointerUp={serviceStatus === "active" ? handlePointerUp : undefined}
+            onPointerCancel={serviceStatus === "active" ? handlePointerUp : undefined}
+            className={`relative w-full aspect-[4/3] bg-emerald-900/60 border-2 border-emerald-500/40 rounded-lg overflow-hidden select-none touch-none transition-all duration-300 ${
+              serviceStatus === "active"
+                ? "cursor-grab active:cursor-grabbing opacity-100"
+                : "cursor-not-allowed opacity-60"
+            }`}
             style={{
               backgroundImage:
                 "radial-gradient(ellipse at center, rgba(16, 185, 129, 0.15) 0%, rgba(6, 78, 59, 0.4) 100%)",
             }}
           >
-            {/* SVG Pitch Markings & Cones */}
+            {/* SVG Pitch Markings, Trajectory & Cone */}
             <svg
               className="absolute inset-0 w-full h-full pointer-events-none"
               viewBox="0 0 100 100"
               preserveAspectRatio="none"
             >
-              {/* Penalty Box (102 to 120 x, 18 to 62 y -> mapped to SVG %) */}
+              {/* Penalty Box (102 to 120 x, 18 to 62 y) */}
               <rect
                 x={((102 - 60) / 60) * 100}
                 y={(18 / 80) * 100}
@@ -229,16 +296,16 @@ export default function SoccerXgPlayground() {
               <line x1="100" y1="0" x2="100" y2="100" stroke="rgba(255,255,255,0.5)" strokeWidth="1" />
               <line x1="100" y1={postLeftY} x2="100" y2={postRightY} stroke="#ffffff" strokeWidth="3" />
 
-              {/* Subtended Shot Cone (Thicker boundary frame) */}
+              {/* Subtended Shot Cone */}
               <polygon
                 points={`${ballSvgX},${ballSvgY} 100,${postLeftY} 100,${postRightY}`}
-                fill="rgba(12, 12, 12, 0.23)"
-                stroke="rgb(4, 4, 4)"
+                fill="rgba(32, 32, 30, 0.56)"
+                stroke="rgba(0, 0, 0, 0.65)"
                 strokeWidth="0.85"
                 strokeDasharray="2,2"
               />
 
-              {/* Direct Trajectory Center Line (Subtle, desaturated tint) */}
+              {/* Faint Trajectory Center Line to Middle of Goal */}
               <line
                 x1={ballSvgX}
                 y1={ballSvgY}
@@ -246,10 +313,10 @@ export default function SoccerXgPlayground() {
                 y2={goalCenterY}
                 stroke={
                   prediction.xg >= 0.35
-                    ? "rgba(52, 211, 153, 0.60)" // Muted emerald
+                    ? "rgba(52, 211, 153, 0.60)"
                     : prediction.xg >= 0.15
-                    ? "rgba(251, 191, 36, 0.55)" // Muted amber
-                    : "rgba(244, 63, 94, 0.40)"   // Muted rose
+                    ? "rgba(251, 191, 36, 0.55)"
+                    : "rgba(244, 63, 94, 0.50)"
                 }
                 strokeWidth="0.35"
                 strokeDasharray="1.5 2.5"
@@ -271,7 +338,13 @@ export default function SoccerXgPlayground() {
             <span>
               Coordinates: X={coords.x.toFixed(1)}y, Y={coords.y.toFixed(1)}y
             </span>
-            <span>{loading ? "Calculating..." : "Ready"}</span>
+            <span>
+              {serviceStatus === "checking"
+                ? "Connecting..."
+                : loading
+                ? "Calculating..."
+                : "Ready"}
+            </span>
           </div>
         </div>
 
@@ -290,9 +363,9 @@ export default function SoccerXgPlayground() {
               {prediction.xg.toFixed(3)}
             </div>
             <span className="text-xs text-slate-400">
-              {prediction.xg > 0.35
+              {prediction.xg >= 0.35
                 ? "High Chance Opportunity"
-                : prediction.xg > 0.15
+                : prediction.xg >= 0.15
                 ? "Moderate Chance"
                 : "Difficult Angle / Low Probability"}
             </span>
